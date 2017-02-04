@@ -40,6 +40,7 @@ class NaiveBayes:
         self.countNeg = 0
         self.countPosWords = 0
         self.countNegWords = 0
+        self.uniqueBigrams = set()
 
     ##########################################################################
     # TODO TODO TODO TODO TODO
@@ -61,21 +62,46 @@ class NaiveBayes:
         """
         if self.FILTER_STOP_WORDS:
             words = self.filterStopWords(words)
+        if self.BOOLEAN_NB:
+            seen = set()
+            i = 0
+            while i < len(words):
+                if words[i] in seen:
+                    del words[i]
+                    i -= 1
+                seen.add(words[i])
+                i += 1
+        if self.BEST_MODEL:
+            # words = self.filterStopWords(words)
+            seen = set()
+            i = 0
+            while i < len(words):
+                if words[i] in seen:
+                    del words[i]
+                    i -= 1
+                seen.add(words[i])
+                i += 1
+            i = 1
+            probabilityPos = self.countPos / (self.countPos + self.countNeg + 0.0) # prior prob
+            probabilityNeg = self.countNeg / (self.countNeg + self.countPos + 0.0) # prior prob
+            while i < len(words):
+                probabilityPos += math.log(self.trainedSet[words[i - 1] + 'pos' + words[i] + 'pos']) - math.log((self.countPosWords + len(self.uniqueBigrams) + 0.0))
+                probabilityNeg += math.log(self.trainedSet[words[i - 1] + 'neg' + words[i] + 'neg']) - math.log((self.countNegWords + len(self.uniqueBigrams) + 0.0))
+                probabilityPos += math.log(self.trainedSet[words[i] + 'pos']) - math.log((self.countPosWords + len(self.uniqueWords) + 0.0))
+                probabilityNeg += math.log(self.trainedSet[words[i] + 'neg']) - math.log((self.countNegWords + len(self.uniqueWords) + 0.0))
+                i += 1
+            if probabilityPos > probabilityNeg:
+                return 'pos'
+            else:
+                return 'neg'
+
+
         probabilityPos = self.countPos / (self.countPos + self.countNeg + 0.0) # prior prob
         probabilityNeg = self.countNeg / (self.countNeg + self.countPos + 0.0) # prior prob
-
-        i = 0
         for word in words:
-            if probabilityPos == 0 or probabilityNeg == 0:
-                print("\t", i)
-                exit()
-            i += 1
-            probabilityPos *= math.log(self.trainedSet[word + 'pos'] / (self.countPosWords + len(self.uniqueWords) + 0.0))
-            probabilityNeg *= math.log(self.trainedSet[word + 'neg'] / (self.countNegWords + len(self.uniqueWords) + 0.0))
-
-        print(probabilityPos)
-        # probabilityPos = math.log(probabilityPos)
-        # probabilityNeg = math.log(probabilityNeg)
+            # print(self.trainedSet[word + 'pos'], self.countPosWords, len(self.uniqueWords), -1*math.log(self.trainedSet[word + 'pos'] / (self.countPosWords + len(self.uniqueWords) + 0.0)))
+            probabilityPos += math.log(self.trainedSet[word + 'pos']) - math.log((self.countPosWords + len(self.uniqueWords) + 0.0))
+            probabilityNeg += math.log(self.trainedSet[word + 'neg']) - math.log((self.countNegWords + len(self.uniqueWords) + 0.0))
 
         if probabilityPos > probabilityNeg:
             return 'pos'
@@ -93,6 +119,43 @@ class NaiveBayes:
         """
         if self.FILTER_STOP_WORDS:
             words = self.filterStopWords(words)
+        if self.BOOLEAN_NB:
+            seen = set()
+            i = 0
+            while i < len(words):
+                if words[i] in seen:
+                    del words[i]
+                    i -= 1
+                seen.add(words[i])
+                i += 1
+        if self.BEST_MODEL:
+            # words = self.filterStopWords(words)
+            seen = set()
+            i = 0
+            while i < len(words):
+                if words[i] in seen:
+                    del words[i]
+                    i -= 1
+                seen.add(words[i])
+                i += 1
+            if klass == 'pos':
+                self.countPos += 1
+            else:
+                self.countNeg += 1
+            i = 1
+            while i < len(words):
+                self.trainedSet[words[i - 1] + klass + words[i] + klass] = self.trainedSet[words[i - 1] + klass + words[i] + klass] + 1
+                self.uniqueBigrams.add(words[i - 1] + klass + words[i] + klass)
+                self.trainedSet[words[i] + klass] = self.trainedSet[words[i] + klass] + 1
+                self.uniqueWords.add(words[i])
+                if klass == 'pos':
+                    self.countPosWords += 1
+                else:
+                    self.countNegWords += 1
+                i += 1
+            return
+
+
         if klass == 'pos':
             self.countPos += 1
         else:
